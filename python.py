@@ -292,6 +292,52 @@ def initialize_or_clone_repo(path):
         print("Opción no válida. Por favor, selecciona 1, 2 o 3.")
         initialize_or_clone_repo(path)
 
+def delete_branch(path):
+    """
+    Elimina una rama local o remota.
+    """
+    branches = run_git_command("git branch -a", path)
+    if not branches:
+        print("No se encontraron ramas.")
+        return
+
+    branch_list = branches.splitlines()
+    cleaned_branch_list = [
+        branch.strip().replace("remotes/origin/", "").strip("* ").strip() for branch in branch_list
+    ]
+
+    print("\nSelecciona la rama a eliminar:")
+    selected_branch = curses.wrapper(select_branch, cleaned_branch_list)
+    if not selected_branch:
+        print("Operación cancelada.")
+        return
+
+    # Preguntar si se desea eliminar local o remotamente
+    option = input(f"¿Deseas eliminar la rama '{selected_branch}' de forma local, remota o ambas? (local/remota/ambas): ").strip().lower()
+    if option == "local":
+        try:
+            run_git_command(f"git branch -d {selected_branch}", path)
+            print(f"Rama '{selected_branch}' eliminada localmente.")
+        except Exception as e:
+            print(f"Error al eliminar la rama local: {str(e)}")
+    elif option == "remota":
+        try:
+            run_git_command(f"git push origin --delete {selected_branch}", path)
+            print(f"Rama '{selected_branch}' eliminada remotamente.")
+        except Exception as e:
+            print(f"Error al eliminar la rama remota: {str(e)}")
+    elif option == "ambas":
+        try:
+            # Eliminar localmente
+            run_git_command(f"git branch -d {selected_branch}", path)
+            print(f"Rama '{selected_branch}' eliminada localmente.")
+            # Eliminar remotamente
+            run_git_command(f"git push origin --delete {selected_branch}", path)
+            print(f"Rama '{selected_branch}' eliminada remotamente.")
+        except Exception as e:
+            print(f"Error al eliminar la rama: {str(e)}")
+    else:
+        print("Opción no válida. La operación ha sido cancelada.")
 def main():
     """
     Menú principal del asistente de Git.
@@ -309,6 +355,7 @@ def main():
         print("5. Crear nueva rama y subirla al remoto")
         print("6. Cambiar de rama")
         print("7. Subir los cambios al remoto")
+        print("8. Eliminar una rama")
         print("0. Salir")
 
         choice = input("\nSelecciona una opción: ").strip()
@@ -343,11 +390,15 @@ def main():
         elif choice == "7":
             # Subir cambios al remoto
             commit_and_push(path)
+        
+        elif choice == "8":
+            delete_branch(path)
         elif choice == "0":
             print("Saliendo...")
             break
         else:
             print("Opción no válida. Inténtalo de nuevo.")
+
 
 if __name__ == "__main__":
     main()
