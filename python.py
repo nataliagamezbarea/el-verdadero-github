@@ -325,12 +325,20 @@ def main():
             create_new_branch(path)
         elif choice == "6":
             # Seleccionar la rama
-            branches = run_git_command("git branch", path)
+            branches = run_git_command("git branch -a", path)
             if branches:
                 branch_list = branches.splitlines()
-                selected_branch = curses.wrapper(select_branch, branch_list)
+                cleaned_branch_list = [
+                    branch.strip().replace("remotes/origin/", "").strip("* ").strip() for branch in branch_list
+                ]
+                selected_branch = curses.wrapper(select_branch, cleaned_branch_list)
                 if selected_branch:
-                    run_git_command(f"git checkout {selected_branch}", path)
+                    if f"remotes/origin/{selected_branch}" in branch_list:
+                        # Si es una rama remota, realizar `checkout -b` para crear localmente
+                        run_git_command(f"git checkout -b {selected_branch} origin/{selected_branch}", path)
+                    else:
+                        # Si ya es una rama local, solo cambiar
+                        run_git_command(f"git checkout {selected_branch}", path)
                     print(f"Cambiado a la rama '{selected_branch}'")
         elif choice == "7":
             # Subir cambios al remoto
@@ -340,7 +348,6 @@ def main():
             break
         else:
             print("Opción no válida. Inténtalo de nuevo.")
-
 
 if __name__ == "__main__":
     main()
