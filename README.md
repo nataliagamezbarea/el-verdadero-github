@@ -28,5 +28,4 @@
    ```
       ```
     pyinstaller --onefile github-commands.py
-         ```
 
