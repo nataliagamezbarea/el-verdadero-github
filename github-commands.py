@@ -338,6 +338,47 @@ def delete_branch(path):
             print(f"Error al eliminar la rama: {str(e)}")
     else:
         print("Opción no válida. La operación ha sido cancelada.")
+
+
+def merge_branches(path):
+    """
+    Permite al usuario seleccionar dos ramas y fusionarlas.
+    """
+    # Obtener la lista de ramas
+    branches = run_git_command("git branch -a", path)
+    if not branches:
+        print("No se encontraron ramas.")
+        return
+
+    branch_list = branches.splitlines()
+    cleaned_branch_list = [
+        branch.strip().replace("remotes/origin/", "").strip("* ").strip() for branch in branch_list
+    ]
+
+    # Seleccionar la rama base (la que recibirá los cambios)
+    print("Selecciona la rama base (la que recibirá los cambios):")
+    base_branch = curses.wrapper(select_branch, cleaned_branch_list)
+    if not base_branch:
+        print("Operación cancelada.")
+        return
+
+    # Seleccionar la rama que se desea fusionar
+    print(f"\nSelecciona la rama para fusionar con '{base_branch}':")
+    merge_branch = curses.wrapper(select_branch, cleaned_branch_list)
+    if not merge_branch:
+        print("Operación cancelada.")
+        return
+
+    # Ejecutar git merge
+    try:
+        print(f"\nFusionando '{merge_branch}' en '{base_branch}'...")
+        run_git_command(f"git checkout {base_branch}", path)
+        result = run_git_command(f"git merge {merge_branch}", path)
+        if result:
+            print(f"Fusión de '{merge_branch}' en '{base_branch}' completada.")
+    except Exception as e:
+        print(f"Error al fusionar las ramas: {str(e)}")
+
 def main():
     """
     Menú principal del asistente de Git.
@@ -356,6 +397,7 @@ def main():
         print("6. Cambiar de rama")
         print("7. Subir los cambios al remoto")
         print("8. Eliminar una rama")
+        print("9. Mergear ramas de _ a _: para fusionar ramas")
         print("0. Salir")
 
         choice = input("\nSelecciona una opción: ").strip()
@@ -396,6 +438,8 @@ def main():
         elif choice == "0":
             print("Saliendo...")
             break
+        elif choice == "9":
+            merge_branches(path)  # Llamar al método para fusionar ramas
         else:
             print("Opción no válida. Inténtalo de nuevo.")
 
